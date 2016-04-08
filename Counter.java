@@ -56,7 +56,17 @@ class VolleyTeam implements Comparable<VolleyTeam>{
 class LeagueGame{
 	VolleyTeam home, visitor;
 	String homeName, visitorName;
-	//private static setPoints(VolleyTeam winner, VolleyTeam loser, 
+
+	private static setLeaguePoints(VolleyTeam winner, VolleyTeam loser, int w, int l){
+		winner.addVictory();
+		if (w-l>1)
+			winner.addPoints(3);
+		else{
+			winner.addPoints(2);
+			loser.addPoints(1);
+		}
+	}
+
 
 	public LeagueGame(String s){
 		//get team names
@@ -64,11 +74,25 @@ class LeagueGame{
 		homeName = tokens[0].trim();
 		tokens = tokens[1].split("/");
 		visitorName = tokens[0].trim();
+		
 		//create teams
 		home = new VolleyTeam(homeName);
 		visitor = new VolleyTeam(visitorName);
+		
 		//get number of played sets and league points
 		String[] sets = tokens[1].split("-");
+		int homeSets, visitorSets;
+		homeSets = Integer.parseInt(sets[0]);
+		visitorSets = Integer.parseInt(sets[1]);
+		if (homeSets>visitorSets)
+			setLeaguePoints(home, visitor, homeSets, visitorSets);
+		else
+			setLeaguePoints(visitor, home, visitorSets, homeSets);
+		
+		//set the balance (difference) of points for each team
+		for(int i=2;i<tokens.length;i++){
+			
+		}
 
 	}
 }
