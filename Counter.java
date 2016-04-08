@@ -5,6 +5,14 @@ class VolleyTeam implements Comparable<VolleyTeam>{
 	private int victories;
 	private int balance;
 
+	@Override
+	public boolean equals(Object o){
+		if (o == null) return false;
+		if (!(o instanceof VolleyTeam)) return false;
+		return ((VolleyTeam)o).name.equals(name);
+	}
+
+
 	public VolleyTeam(String s){
 		this.name=s;
 	}
@@ -25,25 +33,22 @@ class VolleyTeam implements Comparable<VolleyTeam>{
 		return this.name;
 	}
 
-	public boolean equals(Object o){
-		if (o instanceof VolleyTeam){
-			VolleyTeam t = (VolleyTeam)o;
-			return this.name.equals(t.name);
-		}else return false;
-	}
-
 	public int compareTo(VolleyTeam t){
 		//compares in descending order, the first has more points, more victories and/or more balance
 		if (this.points!=t.points) return t.points-this.points;
-		if (this.victories!=t.victories) return t.victories-this.points;
-		return t.victories-this.victories;
+		if (this.victories!=t.victories) return t.victories-this.victories;
+		return t.balance-this.balance;
 	}
 
 	public VolleyTeam merge(VolleyTeam t){
-		this.victories+=t.victories;
-		this.addPoints(t.points);
-		this.changeBalance(t.balance);
-		return this;
+		if (this.name.equals(t.name)){
+			this.victories+=t.victories;
+			this.addPoints(t.points);
+			this.changeBalance(t.balance);
+			return this;
+		}else{	
+		throw new IllegalArgumentException("Nomes diferentes para o merge");
+		}
 	}
 }
 
@@ -51,19 +56,19 @@ class VolleyTeam implements Comparable<VolleyTeam>{
 class LeagueGame{
 	VolleyTeam home, visitor;
 	String homeName, visitorName;
+	//private static setPoints(VolleyTeam winner, VolleyTeam loser, 
+
 	public LeagueGame(String s){
+		//get team names
 		String[] tokens = s.split("vs");
 		homeName = tokens[0].trim();
 		tokens = tokens[1].split("/");
 		visitorName = tokens[0].trim();
-
-		for (int i = 1; i<tokens.length;i++){
-			System.out.println(tokens[i]);
-		}
-
-
-		System.out.println(homeName);
-		System.out.println(visitorName);
+		//create teams
+		home = new VolleyTeam(homeName);
+		visitor = new VolleyTeam(visitorName);
+		//get number of played sets and league points
+		String[] sets = tokens[1].split("-");
 
 	}
 }
