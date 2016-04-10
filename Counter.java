@@ -1,4 +1,5 @@
 import java.util.*;
+import java.io.*;
 class VolleyTeam implements Comparable<VolleyTeam>{
 	private String name;
 	private int points;
@@ -9,9 +10,13 @@ class VolleyTeam implements Comparable<VolleyTeam>{
 	public boolean equals(Object o){
 		if (o == null) return false;
 		if (!(o instanceof VolleyTeam)) return false;
-		return ((VolleyTeam)o).name.equals(name);
+		return ((VolleyTeam)o).name.equals(this.name);
 	}
 
+	@Override
+	public String toString(){
+		return name;
+	}
 
 	public VolleyTeam(String s){
 		this.name=s;
@@ -29,10 +34,6 @@ class VolleyTeam implements Comparable<VolleyTeam>{
 		balance+=i;
 	}
 
-	public String toString(){
-		return this.name;
-	}
-
 	public int compareTo(VolleyTeam t){
 		//compares in descending order, the first has more points, more victories and/or more balance
 		if (this.points!=t.points) return t.points-this.points;
@@ -42,9 +43,9 @@ class VolleyTeam implements Comparable<VolleyTeam>{
 
 	public VolleyTeam merge(VolleyTeam t){
 		if (this.name.equals(t.name)){
+			this.points+=t.points;
 			this.victories+=t.victories;
-			this.addPoints(t.points);
-			this.changeBalance(t.balance);
+			this.balance+=t.balance;
 			return this;
 		}else{	
 		throw new IllegalArgumentException("Nomes diferentes para o merge");
@@ -57,7 +58,7 @@ class LeagueGame{
 	VolleyTeam home, visitor;
 	String homeName, visitorName;
 
-	private static setLeaguePoints(VolleyTeam winner, VolleyTeam loser, int w, int l){
+	private static void setLeaguePoints(VolleyTeam winner, VolleyTeam loser, int w, int l){
 		winner.addVictory();
 		if (w-l>1)
 			winner.addPoints(3);
@@ -67,9 +68,16 @@ class LeagueGame{
 		}
 	}
 
+	public VolleyTeam getHome(){
+		return home;
+	}
+
+	public VolleyTeam getVisitor(){
+		return visitor;
+	}
 
 	public LeagueGame(String s){
-		//get team names
+		//get names
 		String[] tokens = s.split("vs");
 		homeName = tokens[0].trim();
 		tokens = tokens[1].split("/");
@@ -90,22 +98,73 @@ class LeagueGame{
 			setLeaguePoints(visitor, home, visitorSets, homeSets);
 		
 		//set the balance (difference) of points for each team
+		int difference = 0;
+		String[] scoreB = null;
 		for(int i=2;i<tokens.length;i++){
-			
+			scoreB = tokens[i].split("-");
+			difference += Integer.parseInt(scoreB[0].trim())-Integer.parseInt(scoreB[1].trim());
 		}
-
+		home.changeBalance(difference);
+		visitor.changeBalance(-difference);
 	}
 }
-
 public class Counter{
+	private static List<VolleyTeam> table = new ArrayList<>();
+	private static void addTeam(VolleyTeam vt){
+		//verify the existence of team in the list, if exists it merges, else adds the new team
+		int index;
+		if ((index=table.indexOf(vt)) != -1)
+			table.get(index).merge(vt);
+		else
+		table.add(vt);
+	}
+	public static List<String> readFile(File f) throws IOException{
+		//reads the file and returns a List with the lines
+		List<String> lines = new ArrayList<>();
+		try(BufferedReader reader = new BufferedReader(new FileReader(f))){
+			String s;
+			while((s=reader.readLine()) != null){
+				lines.add(s);
+			}
+		}
+		return lines;
+	}
 
+	public static void writeFile(File f, int n) throws IOException{
+		//reads 
+		try(BufferedWriter writer = new BufferedWriter(new FileWriter(f))){
+			for(int i=0;i<n;i++){
+				writer.write(table.get(i).getName());
+				writer.newLine();
+			}
+		}
+	}
+	private static void processGames(List<String> lines){
+		LeagueGame game;
+		for (String s:lines){
+			game = new LeagueGame(s);
+			addTeam(game.getHome());
+			addTeam(game.getVisitor());
+		}
+	}
 	public static void main(String[] args){
-		LeagueGame lg1 = new LeagueGame("DENTIL-PRAIA CLUBE vs CAMPONESA-MINAS/3-2/22-25/25-15/21-25/25-22/15­-12");
-		//LeagueGame lg2 = new LeagueGame("DENTIL-PRAIA CLUBE vs CAMPONESA-MINAS/3­-0/25­-21/25­-18/25­-22");
+		List<String> games=null;
+		//reading
+		try{
+			games = readFile(new File(args[0]));
+		}catch (IOException e){
+			System.out.println("Nao foi possivel ler o arquivo especificado.");
+		}
+		processGames(games);
 
-		//System.out.println(lg1.homeName.equals(lg2.homeName));
+		//uses the compareTo() to sort the VolleyTeams table
+		Collections.sort(table); 
 
-
-
+		//writing
+		try{
+			writeFile(new File("out-"+args[0]), Integer.parseInt(args[1]));
+		}catch(IOException e){
+			System.out.println("Nao foi possivel criar o arquivo de saida.");
+		}
 	}
 }
