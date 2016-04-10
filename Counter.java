@@ -35,7 +35,7 @@ class VolleyTeam implements Comparable<VolleyTeam>{
 	}
 
 	public int compareTo(VolleyTeam t){
-		//compares in descending order, the first has more points, more victories and/or more balance
+		//compares in descending order 1.points; 2.victories; 3.balance(difference);
 		if (this.points!=t.points) return t.points-this.points;
 		if (this.victories!=t.victories) return t.victories-this.victories;
 		return t.balance-this.balance;
@@ -52,8 +52,6 @@ class VolleyTeam implements Comparable<VolleyTeam>{
 		}
 	}
 }
-
-
 class LeagueGame{
 	VolleyTeam home, visitor;
 	String homeName, visitorName;
@@ -134,7 +132,7 @@ public class Counter{
 		//reads 
 		try(BufferedWriter writer = new BufferedWriter(new FileWriter(f))){
 			for(int i=0;i<n;i++){
-				writer.write(table.get(i).getName());
+				writer.write(table.get(i).toString());
 				writer.newLine();
 			}
 		}
@@ -155,6 +153,8 @@ public class Counter{
 		}catch (IOException e){
 			System.out.println("Nao foi possivel ler o arquivo especificado.");
 		}
+
+		//process using LeagueGame objects
 		processGames(games);
 
 		//uses the compareTo() to sort the VolleyTeams table
