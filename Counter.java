@@ -32,6 +32,10 @@ class VolleyTeam implements Comparable<VolleyTeam>{
 				"\n__________________";
 	}
 
+	public String getStatus(){
+		return name+"(p: "+points+", v: "+victories+" b: "+balance+")";
+	}
+
 	public String getName(){
 		return name;
 	}
@@ -97,6 +101,9 @@ class LeagueGame{
 		}
 		home.changeBalance(difference);
 		visitor.changeBalance(-difference);
+
+		System.out.println(home.getStatus());
+		System.out.println(visitor.getStatus());
 	}
 }
 
@@ -106,16 +113,13 @@ public class Counter{
 		//reads the file and returns a List with the lines
 		List<String> lines = new ArrayList<>();
 		try(BufferedReader reader = new BufferedReader(new FileReader(f))){
-			String s;
-			while((s=reader.readLine()) != null){
-				lines.add(s);
-			}
+			reader.lines().forEach(line->lines.add(line));
 		}
 		return lines;
 	}
 	public static void writeFile(File f, int n) throws IOException{
 		//reads n teams which go to next phase
-		Collections.sort(table);
+		if ((n>table.size())||(n<=0)) throw new IllegalArgumentException();
 		try(BufferedWriter writer = new BufferedWriter(new FileWriter(f))){
 			for(int i=0;i<n;i++){
 				writer.write(table.get(i).getName());
@@ -126,34 +130,47 @@ public class Counter{
 	private static void processGames(List<String> lines){ 
 		List<VolleyTeam> raw = new ArrayList<>();
 		Set<String> names = new HashSet<>();
+
+		
+
 		lines.stream()
 			 .map(str->new LeagueGame(str))
 			 .forEach(lg->lg.getTeams()
-			 				.peek(t->names.add(t.getName()))
 			 				.forEach(t->raw.add(t))
 			 		  );
-		names.forEach(x->table.add(raw
-									.stream()
-									.filter(vt->vt.getName().equals(x))
-									.reduce((a,b)->a.merge(b))
-									.get()
-								  )
-					 );
+
+		Map <String, VolleyTeam> myMap = raw.stream().collect(
+			Collectors.toMap(
+				vt->vt.getName(),
+				vt->vt,
+				(v,t)->v.merge(t))
+				);
+		myMap.values().stream().sorted().forEach(vt->table.add(vt));
+		System.out.println(table);
 	}
-	public static void main(String[] args) throws IOException{
+	public static void main(String[] args){
 		List<String> games=null;
-		//input file is converted to a List
+		//input File is converted to a List
 		try{
+			System.out.println("a");
 			games = readFile(new File(args[0]));
+			System.out.println("b");
 		}catch (IOException e){
 			System.out.println("Nao foi possivel ler o arquivo especificado.");
+			System.exit(0);
 		}
-		//process the lines read using LeagueGame objects
+		//process the read lines using LeagueGame objects
+		System.out.println("c");
 		processGames(games);
+		System.out.println("d");
+		//write the output File
 		try{
+			System.out.println("e");
 			writeFile(new File("out-"+args[0]), Integer.parseInt(args[1]));
 		}catch(IOException e){
 			System.out.println("Nao foi possivel criar o arquivo de saida.");
+		}catch(IllegalArgumentException e){
+			System.out.println("Numero invalido de times para a proxima fase.");
 		}
 	}
 }
