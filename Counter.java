@@ -23,14 +23,6 @@ class VolleyTeam implements Comparable<VolleyTeam>{
 		throw new IllegalArgumentException("Nomes diferentes para o merge");
 		}
 	}
-	@Override
-	public String toString(){
-		return "\nNome: "+name+
-				"\nPontos: "+points+
-				"\nVitorias: "+victories+
-				"\nSaldo: "+balance+
-				"\n__________________";
-	}
 
 	public String getStatus(){
 		return name+"(p: "+points+", v: "+victories+" b: "+balance+")";
@@ -68,12 +60,6 @@ class LeagueGame{
 	public Stream<VolleyTeam> getTeams(){
 		return Stream.of(home, visitor);
 	}
-	public VolleyTeam getHome(){
-		return home;
-	}
-	public VolleyTeam getVisitor(){
-		return visitor;
-	}
 	public LeagueGame(String s){
 		//get names
 		String[] tokens = s.split("vs");
@@ -96,14 +82,17 @@ class LeagueGame{
 		int difference = 0;
 		String[] scoreB = null;
 		for(int i=2;i<tokens.length;i++){
-			scoreB = tokens[i].split("-");
-			difference += Integer.parseInt(scoreB[0].trim())-Integer.parseInt(scoreB[1].trim());
+			difference+=
+			Stream.of(tokens[i].split("-"))
+				.map(String::trim)
+				.mapToInt(Integer::parseInt)
+				.reduce((a,b)->a-b)
+				.getAsInt();
+			//scoreB = tokens[i].split("-");
+			//difference += Integer.parseInt(scoreB[0].trim())-Integer.parseInt(scoreB[1].trim());
 		}
 		home.changeBalance(difference);
 		visitor.changeBalance(-difference);
-
-		System.out.println(home.getStatus());
-		System.out.println(visitor.getStatus());
 	}
 }
 
@@ -129,43 +118,35 @@ public class Counter{
 	}
 	private static void processGames(List<String> lines){ 
 		List<VolleyTeam> raw = new ArrayList<>();
-		Set<String> names = new HashSet<>();
-
-		
-
 		lines.stream()
 			 .map(str->new LeagueGame(str))
-			 .forEach(lg->lg.getTeams()
-			 				.forEach(t->raw.add(t))
-			 		  );
-
-		Map <String, VolleyTeam> myMap = raw.stream().collect(
-			Collectors.toMap(
-				vt->vt.getName(),
-				vt->vt,
-				(v,t)->v.merge(t))
-				);
-		myMap.values().stream().sorted().forEach(vt->table.add(vt));
-		System.out.println(table);
-	}
+			 .forEach(lg->lg.getTeams().forEach(t->raw.add(t)));
+		//Get all the VolleyTeams and collect it to a Map which stores as
+		//vt.getName()->vt using the merge method to reduce to an unique vt
+		table=	 
+			raw.stream()
+				.collect(
+					Collectors.toMap(
+						VolleyTeam::getName,
+						vt->vt,
+						(a,b)->a.merge(b)))//Map
+							.values()//to Collection
+							.stream()
+							.sorted()//uses natural order
+							.collect(Collectors.toList());
+		}
 	public static void main(String[] args){
 		List<String> games=null;
 		//input File is converted to a List
 		try{
-			System.out.println("a");
 			games = readFile(new File(args[0]));
-			System.out.println("b");
 		}catch (IOException e){
 			System.out.println("Nao foi possivel ler o arquivo especificado.");
 			System.exit(0);
 		}
 		//process the read lines using LeagueGame objects
-		System.out.println("c");
 		processGames(games);
-		System.out.println("d");
-		//write the output File
 		try{
-			System.out.println("e");
 			writeFile(new File("out-"+args[0]), Integer.parseInt(args[1]));
 		}catch(IOException e){
 			System.out.println("Nao foi possivel criar o arquivo de saida.");
