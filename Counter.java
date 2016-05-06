@@ -7,6 +7,7 @@ class VolleyTeam implements Comparable<VolleyTeam>{
 	private int points;
 	private int victories;
 	private int balance;
+
 	public int compareTo(VolleyTeam t){
 	//compares in descending order points, victories and balance(difference);
 	if (this.points!=t.points) return t.points-this.points;
@@ -48,6 +49,7 @@ class VolleyTeam implements Comparable<VolleyTeam>{
 class LeagueGame{
 	VolleyTeam home, visitor;
 	String homeName, visitorName;
+
 	private static void setLeaguePoints(VolleyTeam winner, VolleyTeam loser, int w, int l){
 		winner.addVictory();
 		if (w-l>1)
@@ -69,7 +71,7 @@ class LeagueGame{
 		//create teams
 		home = new VolleyTeam(homeName);
 		visitor = new VolleyTeam(visitorName);	
-		//get number of played sets and league points
+		//get number of played sets, the winner and league points
 		String[] sets = tokens[1].split("-");
 		int homeSets, visitorSets;
 		homeSets = Integer.parseInt(sets[0]);
@@ -88,8 +90,6 @@ class LeagueGame{
 				.mapToInt(Integer::parseInt)
 				.reduce((a,b)->a-b)
 				.getAsInt();
-			//scoreB = tokens[i].split("-");
-			//difference += Integer.parseInt(scoreB[0].trim())-Integer.parseInt(scoreB[1].trim());
 		}
 		home.changeBalance(difference);
 		visitor.changeBalance(-difference);
@@ -146,6 +146,7 @@ public class Counter{
 		}
 		//process the read lines using LeagueGame objects
 		processGames(games);
+		//output
 		try{
 			writeFile(new File("out-"+args[0]), Integer.parseInt(args[1]));
 		}catch(IOException e){
