@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.function.*;
 import java.util.stream.*;
 import java.io.*;
 
@@ -8,22 +9,24 @@ class VolleyTeam implements Comparable<VolleyTeam>{
 	private int victories;
 	private int balance;
 
+	public static VolleyTeam merge(VolleyTeam t1, VolleyTeam t2){
+		if (t1.getName().equals(t2.getName())){
+			t1.addPoints(t2.points);
+			t1.addVictory(t2.victories);
+			t1.changeBalance(t2.balance);
+			return t1;
+		}else{	
+		throw new IllegalArgumentException("Nomes diferentes para o merge");
+		}
+	}
+
 	public int compareTo(VolleyTeam t){
 	//compares in descending order points, victories and balance(difference);
 	if (this.points!=t.points) return t.points-this.points;
 	if (this.victories!=t.victories) return t.victories-this.victories;
 	return t.balance-this.balance;
 	}
-	public VolleyTeam merge(VolleyTeam t){
-		if (this.name.equals(t.name)){
-			this.points+=t.points;
-			this.victories+=t.victories;
-			this.balance+=t.balance;
-			return this;
-		}else{	
-		throw new IllegalArgumentException("Nomes diferentes para o merge");
-		}
-	}
+	
 
 	public String getStatus(){
 		return name+"(p: "+points+", v: "+victories+" b: "+balance+")";
@@ -40,6 +43,9 @@ class VolleyTeam implements Comparable<VolleyTeam>{
 	}
 	public void addVictory(){
 		victories++;
+	}
+	public void addVictory(int i){
+		victories+=i;
 	}
 	public void changeBalance(int i){
 		balance+=i;
@@ -106,24 +112,38 @@ public class Counter{
 		}
 		return lines;
 	}
-	public static void writeFile(File f, int n) throws IOException{
+	public static void writeFile(File f, int n, String winner) throws IOException{
 		//reads n teams which go to next phase
 		if ((n>table.size())||(n<=0)) throw new IllegalArgumentException();
 		try(BufferedWriter writer = new BufferedWriter(new FileWriter(f))){
 			for(int i=0;i<n;i++){
-				writer.write(table.get(i).getName());
+				writer.write(winner);
 				writer.newLine();
 			}
 		}
 	}
-	private static void processGames(List<String> lines){ 
-		List<VolleyTeam> raw = new ArrayList<>();
+	private static String processGames(List<String> lines){ 
+		//List<VolleyTeam> raw = new ArrayList<>();
+		VolleyTeam vt = 
 		lines.stream()
-			 .map(str->new LeagueGame(str))
-			 .forEach(lg->lg.getTeams().forEach(t->raw.add(t)));
+			 .map(LeagueGame::new)
+			 .flatMap(LeagueGame::getTeams)
+			 .collect(Collectors.toMap(team->team.getName(),
+			 						   team->team,
+			 						   (a,b)->VolleyTeam.merge(a,b),
+				 					   TreeMap::new))
+			 .entrySet()
+			 .stream()
+			 .max(Map.Entry.comparingByValue())
+			 .map(Map.Entry::getValue)
+			 .orElseThrow(()->new RuntimeException("Ocorreu um erro ao processar"));
+
+			 return vt.getName();
+
+			 //.forEach(lg->lg.getTeams().forEach(t->raw.add(t)));
 		//Get all the VolleyTeams and collect it to a Map which stores as
 		//vt.getName()->vt using the merge method to reduce to an unique vt
-		table=	 
+		/*table=	 
 			raw.stream()
 				.collect(
 					Collectors.toMap(
@@ -133,7 +153,7 @@ public class Counter{
 							.values()//to Collection
 							.stream()
 							.sorted()//uses natural order
-							.collect(Collectors.toList());
+							.collect(Collectors.toList());*/
 		}
 	public static void main(String[] args){
 		List<String> games=null;
@@ -145,10 +165,10 @@ public class Counter{
 			System.exit(0);
 		}
 		//process the read lines using LeagueGame objects
-		processGames(games);
+		String winner = processGames(games);
 		//output
 		try{
-			writeFile(new File("out-"+args[0]), Integer.parseInt(args[1]));
+			writeFile(new File("out-"+args[0]), Integer.parseInt(args[1]), winner);
 		}catch(IOException e){
 			System.out.println("Nao foi possivel criar o arquivo de saida.");
 		}catch(IllegalArgumentException e){
