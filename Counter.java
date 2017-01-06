@@ -112,51 +112,36 @@ public class Counter{
 		}
 		return lines;
 	}
-	public static void writeFile(File f, int n, String winner) throws IOException{
+	public static void writeFile(File f, int n, List<String> winner) throws IOException{
 		//reads n teams which go to next phase
-		if ((n>table.size())||(n<=0)) throw new IllegalArgumentException();
+		if ((n>winner.size())||(n<=0)) throw new IllegalArgumentException("Erro interno");
 		try(BufferedWriter writer = new BufferedWriter(new FileWriter(f))){
 			for(int i=0;i<n;i++){
-				writer.write(winner);
+				writer.write(winner.get(i));
 				writer.newLine();
 			}
 		}
 	}
-	private static String processGames(List<String> lines){ 
+	private static List<String> processGames(List<String> lines){ 
 		//List<VolleyTeam> raw = new ArrayList<>();
-		VolleyTeam vt = 
+		List<String> vtList = 
 		lines.stream()
 			 .map(LeagueGame::new)
 			 .flatMap(LeagueGame::getTeams)
-			 .collect(Collectors.toMap(team->team.getName(),
-			 						   team->team,
-			 						   (a,b)->VolleyTeam.merge(a,b),
-				 					   TreeMap::new))
+			 .collect(Collectors.toMap(VolleyTeam::getName,
+			 						   vt->vt,
+			 						   VolleyTeam::merge))
 			 .entrySet()
 			 .stream()
-			 .max(Map.Entry.comparingByValue())
 			 .map(Map.Entry::getValue)
-			 .orElseThrow(()->new RuntimeException("Ocorreu um erro ao processar"));
+			 .sorted()
+			 .map(VolleyTeam::getName)
+			 .collect(Collectors.toList());
 
-			 return vt.getName();
-
-			 //.forEach(lg->lg.getTeams().forEach(t->raw.add(t)));
-		//Get all the VolleyTeams and collect it to a Map which stores as
-		//vt.getName()->vt using the merge method to reduce to an unique vt
-		/*table=	 
-			raw.stream()
-				.collect(
-					Collectors.toMap(
-						VolleyTeam::getName,
-						vt->vt,
-						(a,b)->a.merge(b)))//Map
-							.values()//to Collection
-							.stream()
-							.sorted()//uses natural order
-							.collect(Collectors.toList());*/
+			 return vtList;
 		}
 	public static void main(String[] args){
-		List<String> games=null;
+		List<String> games = null;
 		//input File is converted to a List
 		try{
 			games = readFile(new File(args[0]));
@@ -165,13 +150,14 @@ public class Counter{
 			System.exit(0);
 		}
 		//process the read lines using LeagueGame objects
-		String winner = processGames(games);
+		List<String> teams = processGames(games);
 		//output
 		try{
-			writeFile(new File("out-"+args[0]), Integer.parseInt(args[1]), winner);
+			writeFile(new File("out-"+args[0]), Integer.parseInt(args[1]), teams);
 		}catch(IOException e){
 			System.out.println("Nao foi possivel criar o arquivo de saida.");
 		}catch(IllegalArgumentException e){
+			e.printStackTrace();
 			System.out.println("Numero invalido de times para a proxima fase.");
 		}
 	}
